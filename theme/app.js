@@ -65,24 +65,32 @@
 
   /* ---------- article: TOC active section ---------- */
   var tocLinks = Array.prototype.slice.call(document.querySelectorAll("[data-toc-link]"));
-  if (tocLinks.length && "IntersectionObserver" in window) {
-    var targets = tocLinks
-      .map(function (a) { return document.getElementById(a.getAttribute("href").slice(1)); })
-      .filter(Boolean);
-    var visible = {};
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) { visible[en.target.id] = en.isIntersecting ? en.boundingClientRect.top : null; });
+  if (tocLinks.length) {
+    var secs = tocLinks
+      .map(function (a) {
+        var id = a.getAttribute("href").slice(1);
+        return { id: id, el: document.getElementById(id), link: a };
+      })
+      .filter(function (s) { return s.el; });
+
+    var updateToc = function () {
+      var line = window.scrollY + 130;
       var current = null;
-      for (var i = 0; i < targets.length; i++) {
-        if (visible[targets[i].id] !== null && visible[targets[i].id] !== undefined) { current = targets[i].id; break; }
+      for (var i = 0; i < secs.length; i++) {
+        var top = secs[i].el.getBoundingClientRect().top + window.scrollY;
+        if (top <= line) current = secs[i].id;
       }
-      if (current) {
-        tocLinks.forEach(function (a) {
-          a.classList.toggle("active", a.getAttribute("href") === "#" + current);
-        });
+      // 문서 끝에 도달하면 마지막 항목을 활성화
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+        current = secs[secs.length - 1].id;
       }
-    }, { rootMargin: "-92px 0px -60% 0px", threshold: [0, 1] });
-    targets.forEach(function (t) { io.observe(t); });
+      secs.forEach(function (s) {
+        s.link.classList.toggle("active", s.id === current);
+      });
+    };
+    window.addEventListener("scroll", updateToc, { passive: true });
+    window.addEventListener("resize", updateToc);
+    updateToc();
   }
 
   /* ---------- copy link ---------- */

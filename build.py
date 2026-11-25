@@ -840,6 +840,7 @@ def build_article(a):
     tags = a["tags"]
 
     toc_html = ""
+    mobile_toc = ""
     if len(toc) >= 2:
         items = "\n".join(
             f'<li><a href="#{sid}" data-toc-link>{esc(label)}</a></li>' for sid, label in toc
@@ -848,6 +849,10 @@ def build_article(a):
   <div class="toc-title">In this article</div>
   <ol>{items}</ol>
 </aside>"""
+        mobile_toc = f"""<details class="mobile-toc">
+  <summary>목차 · {len(toc)}개 장 <span aria-hidden="true">▾</span></summary>
+  <ol>{items}</ol>
+</details>"""
 
     takeaways = "\n".join(f"<li>{t}</li>" for t in a["takeaways"])
     others = [x for x in ARTICLES if x["slug"] != a["slug"]]
@@ -923,6 +928,7 @@ def build_article(a):
 
   <div class="wrap article-layout">
     <div>
+      {mobile_toc}
       <aside class="takeaways" style="border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:0 0 34px;background:var(--paper-2)">
         <p style="margin:0 0 10px;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);font-weight:700">3줄 요약</p>
         <ol style="margin:0;padding-left:1.15em;display:grid;gap:8px;font-size:15px;line-height:1.7;color:var(--ink-2)">{takeaways}</ol>
