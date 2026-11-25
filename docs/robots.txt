@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://happy1ch.github.io/pickearly/sitemap.xml
+Sitemap: https://pickearly.com/sitemap.xml

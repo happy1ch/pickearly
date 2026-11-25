@@ -30,7 +30,7 @@ OUT = os.path.join(ROOT, "docs")
 # 사이트 설정
 # --------------------------------------------------------------------------
 SITE = {
-    "url": "https://happy1ch.github.io/pickearly",
+    "url": "https://pickearly.com",
     "name": "PickEarly",
     "name_ko": "픽얼리",
     "sub": "얼리어답터 연구소",
@@ -452,8 +452,24 @@ def decorate(body: str) -> str:
 # --------------------------------------------------------------------------
 # 공통 레이아웃
 # --------------------------------------------------------------------------
+def clean_path(path: str) -> str:
+    """Cloudflare Pages는 `.html` 주소를 확장자 없는 주소로 308 정규화한다.
+    링크·canonical·sitemap도 실제로 서비스되는 주소로 맞춘다."""
+    if path == "index.html":
+        return ""
+    return path[:-5] if path.endswith(".html") else path
+
+
+def absu(path: str) -> str:
+    """사이트 절대 주소(https://pickearly.com/...)."""
+    return SITE["url"] + "/" + clean_path(path)
+
+
 def rel(depth: int, path: str) -> str:
-    return ("../" * depth) + path
+    p = clean_path(path)
+    if p == "":
+        return ("../" * depth) or "./"
+    return ("../" * depth) + p
 
 
 def head_tags(title, desc, canonical, og_image, depth, extra_json=None, page_type="website"):
@@ -676,7 +692,7 @@ def build_home():
       <h2><span class="dot"></span>이번 호 커버</h2>
       <p>{date_dots(f['date'])} 발행</p>
     </div>
-    <a class="featured" href="articles/{f['slug']}.html">
+    <a class="featured" href="articles/{f['slug']}">
       <div class="featured-media">
         <img src="{f['thumb']}" alt="{esc(f['thumb_alt'])}" fetchpriority="high">
       </div>
@@ -757,7 +773,7 @@ def build_home():
                 {
                     "@type": "ListItem",
                     "position": n + 1,
-                    "url": f"{SITE['url']}/articles/{a['slug']}.html",
+                    "url": absu(f"articles/{a['slug']}.html"),
                     "name": a["title"],
                 }
                 for n, a in enumerate(ARTICLES)
@@ -817,7 +833,7 @@ def build_articles_index():
     return page_shell(
         "전체 기사 — 픽얼리 PickEarly",
         "픽얼리 얼리어답터 연구소가 확인한 쿠팡·알리 제품 리뷰 전체 목록입니다.",
-        SITE["url"] + "/articles.html",
+        absu("articles.html"),
         "assets/og/og-home.png",
         0,
         body,
@@ -861,7 +877,7 @@ def build_article(a):
         o = others[0]
         related = f"""<section class="related">
   <h2>이어서 읽기</h2>
-  <a class="related-card" href="{o['slug']}.html">
+  <a class="related-card" href="{o['slug']}">
     <span class="rc-thumb"><img src="../{o['thumb']}" alt="{esc(o['thumb_alt'])}" loading="lazy"></span>
     <span class="rc-body">
       {cat_badge(o['cat'])}
@@ -870,7 +886,7 @@ def build_article(a):
   </a>
 </section>"""
 
-    canon = f"{SITE['url']}/articles/{a['slug']}.html"
+    canon = absu(f"articles/{a['slug']}.html")
     ld = [
         {
             "@context": "https://schema.org",
@@ -893,7 +909,7 @@ def build_article(a):
             "@type": "BreadcrumbList",
             "itemListElement": [
                 {"@type": "ListItem", "position": 1, "name": "홈", "item": SITE["url"] + "/"},
-                {"@type": "ListItem", "position": 2, "name": "전체 기사", "item": SITE["url"] + "/articles.html"},
+                {"@type": "ListItem", "position": 2, "name": "전체 기사", "item": absu("articles.html")},
                 {"@type": "ListItem", "position": 3, "name": a["title"], "item": canon},
             ],
         },
@@ -905,8 +921,8 @@ def build_article(a):
   <header class="article-head">
     <div class="wrap">
       <nav class="crumbs" aria-label="위치">
-        <a href="../index.html">홈</a><span class="sl">/</span>
-        <a href="../articles.html">{esc(CATS[a['cat']]['label'])}</a><span class="sl">/</span>
+        <a href="../">홈</a><span class="sl">/</span>
+        <a href="../articles">{esc(CATS[a['cat']]['label'])}</a><span class="sl">/</span>
         <span>{date_dots(a['date'])}</span>
       </nav>
       {cat_badge(a['cat'])}
@@ -947,7 +963,7 @@ def build_article(a):
             <span data-copy-label>링크 복사</span>
           </button>
           <a class="btn-ghost" href="mailto:?subject={quote(a['title'])}&body={quote(canon)}">메일로 보내기</a>
-          <a class="btn-ghost" href="../articles.html">전체 기사</a>
+          <a class="btn-ghost" href="../articles">전체 기사</a>
         </div>
       </footer>
       {related}
@@ -1013,7 +1029,7 @@ def build_about():
     return page_shell(
         "연구소 소개 — 픽얼리 PickEarly",
         "픽얼리 얼리어답터 연구소가 제품을 확인하고 글을 쓰는 방식, 제휴 고지와 정보의 한계를 안내합니다.",
-        SITE["url"] + "/about.html",
+        absu("about.html"),
         "assets/og/og-home.png",
         0,
         body,
@@ -1027,13 +1043,13 @@ def build_404():
   <p class="eyebrow" style="justify-content:center">404</p>
   <h1 style="font-size:clamp(30px,5vw,48px);letter-spacing:-.045em;margin:16px 0 12px">찾으시는 페이지가 없습니다</h1>
   <p style="color:var(--ink-2);margin:0 auto 30px;max-width:44ch">주소가 바뀌었거나, 아직 쓰지 않은 글일 수 있습니다. 전체 기사에서 다시 찾아보세요.</p>
-  <a class="cta" href="articles.html" style="display:inline-flex">전체 기사 보기 <span class="cta-arrow">→</span></a>
+  <a class="cta" href="articles" style="display:inline-flex">전체 기사 보기 <span class="cta-arrow">→</span></a>
 </div>
 """
     return page_shell(
         "페이지를 찾을 수 없습니다 — 픽얼리 PickEarly",
         "요청하신 페이지가 없습니다.",
-        SITE["url"] + "/404.html",
+        absu("404.html"),
         "assets/og/og-home.png",
         0,
         body,
@@ -1046,9 +1062,9 @@ def build_404():
 # --------------------------------------------------------------------------
 def build_feeds():
     today = dt.date.today().isoformat()
-    urls = [(SITE["url"] + "/", today, "1.0"), (SITE["url"] + "/articles.html", today, "0.8"), (SITE["url"] + "/about.html", today, "0.5")]
+    urls = [(absu("index.html"), today, "1.0"), (absu("articles.html"), today, "0.8"), (absu("about.html"), today, "0.5")]
     for a in ARTICLES:
-        urls.append((f"{SITE['url']}/articles/{a['slug']}.html", a.get("updated", a["date"]), "0.9"))
+        urls.append((absu(f"articles/{a['slug']}.html"), a.get("updated", a["date"]), "0.9"))
 
     entries = "\n".join(
         f"""  <url>
@@ -1076,7 +1092,7 @@ Sitemap: {SITE['url']}/sitemap.xml
     items = []
     for a in sorted(ARTICLES, key=lambda x: x["date"], reverse=True):
         pub = dt.datetime.fromisoformat(a["date"] + "T09:00:00+09:00").strftime("%a, %d %b %Y %H:%M:%S +0900")
-        link = f"{SITE['url']}/articles/{a['slug']}.html"
+        link = absu(f"articles/{a['slug']}.html")
         items.append(
             f"""    <item>
       <title>{html.escape(a['title'])}</title>
