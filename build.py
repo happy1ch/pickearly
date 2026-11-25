@@ -222,9 +222,25 @@ def parse_list(lines, i):
     is_link_list = not ordered and sum(
         1 for s in items if "coupang.com" in s or "aliexpress.com" in s
     ) >= 2
-    cls = ' class="link-list"' if is_link_list else ""
+    if is_link_list:
+        lis = []
+        for s in items:
+            m = re.match(r"^(.*?)\s*[—–-]\s*(https?://\S+)$", s)
+            if not m:
+                lis.append(f"<li>{inline(s)}</li>")
+                continue
+            label, url = m.group(1).strip(), m.group(2).strip()
+            lis.append(
+                '<li><div class="ll-main"><span class="ll-label">'
+                + inline(label)
+                + '</span><a class="ll-btn" href="'
+                + url
+                + '" target="_blank" rel="noopener sponsored nofollow">구매하기 <span aria-hidden="true">↗</span></a></div>'
+                + f'<div class="ll-url">{url}</div></li>'
+            )
+        return '<ul class="link-list">\n' + "\n".join(lis) + "\n</ul>", i
     body = "\n".join(f"<li>{inline(s)}</li>" for s in items)
-    return f"<{tag}{cls}>\n{body}\n</{tag}>", i
+    return f"<{tag}>{body}</{tag}>", i
 
 
 def parse_quote(lines, i, collapse_keys):
@@ -255,7 +271,7 @@ def parse_quote(lines, i, collapse_keys):
             head = text.split("\n")[0]
             m = re.match(r"^(.*?)\((.*?)\)\s*:?\s*", head)
             if m:
-                summary = f"{m.group(1).strip()} ({m.group(2)} 확인)"
+                summary = f"{m.group(1).strip()} ({m.group(2)})"
             else:
                 summary = head.split(":")[0].strip() or key
             body_inner = body
@@ -661,20 +677,20 @@ def build_home():
       <p>{date_dots(f['date'])} 발행</p>
     </div>
     <a class="featured" href="articles/{f['slug']}.html">
+      <div class="featured-media">
+        <img src="{f['thumb']}" alt="{esc(f['thumb_alt'])}" fetchpriority="high">
+      </div>
       <div class="featured-body">
         {cat_badge(f['cat'])}
         <h3>{esc(f['title'])}</h3>
         <p class="excerpt">{esc(f['excerpt'])}</p>
-        <div class="spacer"></div>
-        <div class="meta-row" style="margin-bottom:16px">
-          <span>{date_dots(f['date'])}</span><span class="sep"></span>
-          <span>읽는 시간 {mins}분</span><span class="sep"></span>
-          <span>핵심 3가지 정리</span>
+        <div class="featured-foot">
+          <div class="meta-row">
+            <span>{date_dots(f['date'])} 발행</span><span class="sep"></span>
+            <span>읽는 시간 {mins}분</span>
+          </div>
+          <span class="more-link">기사 읽기 <span class="arrow">→</span></span>
         </div>
-        <span class="more-link">기사 읽기 <span class="arrow">→</span></span>
-      </div>
-      <div class="featured-media">
-        <img src="{f['thumb']}" alt="{esc(f['thumb_alt'])}" fetchpriority="high">
       </div>
     </a>
   </section>
@@ -817,6 +833,8 @@ def build_article(a):
     body_html, toc, md_tags, h1 = md_to_html(md, a.get("collapse_notes"))
     body_html = re.sub(r'^(\s*<hr>\s*)+', '', body_html).strip()
     body_html = re.sub(r'(<p class="dateline">.*?</p>)\s*(<hr>\s*)+', r'\1', body_html, flags=re.S)
+    # 섹션 제목(h2)이 이미 구분선을 그리므로 앞의 hr은 중복
+    body_html = re.sub(r'(<hr>\s*)+(<h2)', r'\2', body_html)
     body_html = decorate(body_html)
     mins = reading_time(a)
     tags = a["tags"]
