@@ -42,6 +42,8 @@ SITE = {
     "author": "픽얼리 편집부",
     "lang": "ko",
     "email": "",
+    # 네이버 서치어드바이저 소유확인 태그(content 값만). 비어 있으면 태그를 넣지 않는다.
+    "naver_verify": "62c134f9f35274486d6aafe568e36546e251930f",
 }
 
 CATS = {
@@ -509,7 +511,11 @@ def rel(depth: int, path: str) -> str:
 
 def head_tags(title, desc, canonical, og_image, depth, extra_json=None, page_type="website"):
     R = lambda p: rel(depth, p)  # noqa: E731
+    verify = ""
+    if SITE.get("naver_verify"):
+        verify = f'<meta name="naver-site-verification" content="{esc(SITE["naver_verify"])}">\n'
     js = ""
+
     if extra_json:
         js = "\n".join(
             '<script type="application/ld+json">' + json.dumps(o, ensure_ascii=False) + "</script>"
@@ -529,7 +535,7 @@ def head_tags(title, desc, canonical, og_image, depth, extra_json=None, page_typ
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}">
 <meta name="author" content="{esc(SITE['author'])}">
-<link rel="canonical" href="{canonical}">
+{verify}<link rel="canonical" href="{canonical}">
 <meta name="theme-color" content="#15171b">
 <meta property="og:type" content="{page_type}">
 <meta property="og:site_name" content="픽얼리 PickEarly">
