@@ -1,3 +1,33 @@
+---
+slug: ai-voice-recorder-boya-newyes
+cat: ali
+title: "명함보다 얇은 'AI 녹음기', 알리에서 9만 원대 — 회의·상담·강의 다 받아 적는 요즘 아이디어 상품 2종"
+short_title: |-
+  명함보다 얇은 AI 녹음기,
+  9만 원대와 5만 원대
+excerpt: "스마트폰 녹음은 통화가 오면 끊기고, 한 시간짜리 파일은 다시 듣기 어렵습니다. BOYA Notra Neo와 NEWYES Ailog를 같은 조건에서 비교했습니다."
+date: 2026-11-25
+updated: 2026-11-25
+thumb: assets/images/boya-notra-neo.jpg
+thumb_alt: "BOYA Notra Neo AI 노트테이커"
+og: assets/og/og-ai-voice-recorder.png
+tags:
+  - "AI 녹음기"
+  - "BOYA Notra Neo"
+  - "NEWYES Ailog"
+  - "AI 메모기"
+  - "알리 추천"
+disclosure: "이 글은 알리익스프레스 어필리에이트 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+takeaways:
+  - "이 기기는 <b>기기 값보다 '앱 이용 조건'</b>에서 갈립니다. 한국어 전사 지원 여부가 아직 판매 페이지에 확정 표기되어 있지 않습니다."
+  - "무료 전사량은 BOYA 월 320분, NEWYES 월 600분이지만 <b>초과 요금</b>은 NEWYES가 훨씬 비쌉니다."
+  - "녹음은 오프라인에서도 되고 전사·요약은 나중에 앱에서 합니다. 회의 중 통화가 와도 녹음이 끊기지 않는 것이 핵심입니다."
+collapse_notes: []
+featured: false
+order: 0
+draft: false
+---
+
 # 명함보다 얇은 'AI 녹음기', 알리에서 9만 원대 — 회의·상담·강의 다 받아 적는 요즘 아이디어 상품 2종
 
 > 이 포스팅은 알리익스프레스 어필리에이트 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.

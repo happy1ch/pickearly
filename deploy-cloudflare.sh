@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# PickEarly 배포 준비: 사이트 빌드 → Cloudflare Pages(Direct Upload)에 올릴 zip 생성.
+# [옛 방식] Direct Upload 로 급히 올릴 때 쓰는 스크립트.
+# 이제는 GitHub 저장소 → Cloudflare Pages(Git 연동) 자동 빌드가 기본입니다(README 5장).
+# Direct Upload 로 올리면 /admin 관리자 기능(Functions)은 동작하지 않습니다.
 # 사용법:  bash deploy-cloudflare.sh
 # 그다음 dash.cloudflare.com → Workers 및 Pages → pickearly → 배포 → 배포 생성 → zip 업로드.
 set -euo pipefail

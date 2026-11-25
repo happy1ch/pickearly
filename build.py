@@ -7,7 +7,9 @@ PickEarly · 픽얼리 — 얼리어답터 연구소  (static site builder)
   python3 build.py            # 사이트 빌드
   python3 build.py --domain https://pickearly.com   # 커스텀 도메인 기준으로 빌드
 
-원고는 손대지 않고 그대로 읽는다. 메타데이터는 아래 ARTICLES 에만 있다.
+원고 파일 하나가 곧 글 하나다. 파일 맨 위 YAML 프런트매터(slug·cat·title·date …)와
+본문(Markdown)으로 이루어지며, build.py 는 content/*.md 를 전부 스캔해
+발행일 내림차순으로 사이트를 만든다. 목록을 코드에 적어 두지 않는다.
 """
 
 import argparse
@@ -20,6 +22,8 @@ from urllib.parse import quote
 import re
 import shutil
 import sys
+
+import frontmatter
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CONTENT = os.path.join(ROOT, "content")
@@ -45,52 +49,83 @@ CATS = {
     "ali": {"label": "AI 아이디어 기기", "vendor": "알리", "class": "cat-ali"},
 }
 
-ARTICLES = [
-    {
-        "slug": "bespoke-ai-steam-auto",
-        "file": "bespoke-ai-steam.md",
-        "cat": "coupang",
-        "title": "삼성 비스포크 AI 스팀 자동 급배수, 물통 안 버려도 되는 로봇청소기의 조건",
-        "short_title": "물통을 버리는 로봇청소기,\n사기 전에 볼 세 가지",
-        "excerpt": "직배수는 성능이 아니라 '설치'의 문제입니다. 리폼비 포함 여부, 스테이션 구조, 모델명 끝자리 — 돈을 쓰기 전에 확인할 세 가지를 정리했습니다.",
-        "date": "2026-11-25",
-        "updated": "2026-11-25",
-        "thumb": "assets/images/thumb-bespoke-ai-steam.png",
-        "thumb_alt": "비스포크 AI 스팀 자동 급배수 모델 비교 (VR70 · VR80 · VR90)",
-        "og": "assets/og/og-bespoke-ai-steam.png",
-        "tags": ["비스포크 AI 스팀", "자동 급배수", "직배수 로봇청소기", "VR80F01SDG", "리폼비 포함"],
-        "disclosure": "이 글은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다. 구매 가격은 동일합니다.",
-        "takeaways": [
-            "자동 급배수(직배수)는 청소기 성능이 아니라 <b>설치 방식</b>입니다. 배관과 하부장 사진으로 설치 상담을 먼저 받아야 합니다.",
-            "100℃ 스팀 살균과 열풍 건조는 본체가 아니라 <b>스테이션</b>이 하는 일입니다. 걸레 냄새 문제를 없애는 핵심입니다.",
-            "쿠팡 표시가 기준으로는 <b>플러스(VR80F01SDG, 1,590,000원)</b> 가 일반형·울트라와 각각 10만 원 차이로 가장 균형적입니다.",
-        ],
-        "collapse_notes": ["링크 검증 메모"],
-        "featured": True,
-    },
-    {
-        "slug": "ai-voice-recorder-boya-newyes",
-        "file": "ali-ai-recorder.md",
-        "cat": "ali",
-        "title": "명함보다 얇은 'AI 녹음기', 알리에서 9만 원대 — 회의·상담·강의 다 받아 적는 요즘 아이디어 상품 2종",
-        "short_title": "명함보다 얇은 AI 녹음기,\n9만 원대와 5만 원대",
-        "excerpt": "스마트폰 녹음은 통화가 오면 끊기고, 한 시간짜리 파일은 다시 듣기 어렵습니다. BOYA Notra Neo와 NEWYES Ailog를 같은 조건에서 비교했습니다.",
-        "date": "2026-11-25",
-        "updated": "2026-11-25",
-        "thumb": "assets/images/boya-notra-neo.jpg",
-        "thumb_alt": "BOYA Notra Neo AI 노트테이커",
-        "og": "assets/og/og-ai-voice-recorder.png",
-        "tags": ["AI 녹음기", "BOYA Notra Neo", "NEWYES Ailog", "AI 메모기", "알리 추천"],
-        "disclosure": "이 글은 알리익스프레스 어필리에이트 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
-        "takeaways": [
-            "이 기기는 <b>기기 값보다 '앱 이용 조건'</b>에서 갈립니다. 한국어 전사 지원 여부가 아직 판매 페이지에 확정 표기되어 있지 않습니다.",
-            "무료 전사량은 BOYA 월 320분, NEWYES 월 600분이지만 <b>초과 요금</b>은 NEWYES가 훨씬 비쌉니다.",
-            "녹음은 오프라인에서도 되고 전사·요약은 나중에 앱에서 합니다. 회의 중 통화가 와도 녹음이 끊기지 않는 것이 핵심입니다.",
-        ],
-        "collapse_notes": [],
-        "featured": False,
-    },
+PUBLISHED = []   # build 시 채워진다 (load_content 참고)
+
+# --------------------------------------------------------------------------
+# 원고 읽기 (content/*.md 의 YAML 프런트매터)
+# --------------------------------------------------------------------------
+# 프런트매터에 쓸 수 있는 키 — 이 순서대로 파일에 기록한다.
+FM_ORDER = [
+    "slug", "cat", "title", "short_title", "excerpt", "date", "updated",
+    "thumb", "thumb_alt", "og", "tags", "disclosure", "takeaways",
+    "collapse_notes", "featured", "order", "draft", "spec", "links",
 ]
+REQUIRED = ("slug", "cat", "title", "excerpt", "date")
+SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def load_content(verbose=True):
+    """content/*.md 를 전부 읽어 발행 글 목록을 만든다.
+
+    - 날짜 내림차순, 같은 날짜면 `order` 내림차순(둘 다 없으면 파일명 순).
+    - 프런트매터가 없거나 필수 항목이 빠진 파일은 건너뛰고 경고를 남긴다.
+    - `draft: true` 인 글은 사이트에 넣지 않는다(초안 보관용).
+    """
+    published, drafts, problems = [], [], []
+    names = sorted(n for n in os.listdir(CONTENT) if n.endswith(".md"))
+    for name in names:
+        path = os.path.join(CONTENT, name)
+        with open(path, encoding="utf-8") as fh:
+            raw = fh.read()
+        meta, _body = frontmatter.split(raw)
+        if not meta:
+            problems.append(f"{name}: 파일 맨 위에 YAML 프런트매터(---)가 없습니다")
+            continue
+        a = {k: meta[k] for k in meta if k not in ("file",)}
+        missing = [k for k in REQUIRED if not a.get(k)]
+        if missing:
+            problems.append(f"{name}: 필수 항목이 없습니다 — {', '.join(missing)}")
+            continue
+        if a["cat"] not in CATS:
+            problems.append(f"{name}: cat 은 {' / '.join(CATS)} 중 하나여야 합니다 (지금: {a['cat']})")
+            continue
+        if not SLUG_RE.match(str(a["slug"])):
+            problems.append(f"{name}: slug 는 영소문자·숫자·하이픈만 쓸 수 있습니다 (지금: {a['slug']})")
+            continue
+        a["file"] = name
+        a["updated"] = a.get("updated") or a["date"]
+        a["date"] = str(a["date"])
+        a["updated"] = str(a["updated"])
+        a.setdefault("short_title", a["title"])
+        a.setdefault("thumb", "")
+        a.setdefault("thumb_alt", a["title"])
+        a.setdefault("og", "assets/og/og-home.png")
+        a.setdefault("tags", [])
+        a.setdefault("takeaways", [])
+        a.setdefault("collapse_notes", [])
+        a.setdefault("disclosure", "")
+        a.setdefault("featured", False)
+        if not isinstance(a["tags"], list):
+            a["tags"] = [t.strip() for t in str(a["tags"]).split(",") if t.strip()]
+        if not isinstance(a["takeaways"], list):
+            a["takeaways"] = [a["takeaways"]]
+        if not isinstance(a["collapse_notes"], list):
+            a["collapse_notes"] = [a["collapse_notes"]]
+        a["_slug_list"] = a["slug"]
+        (drafts if a.get("draft") else published).append(a)
+
+    # 안정 정렬: 파일명 → (날짜, order) 내림차순
+    published.sort(key=lambda x: x["file"])
+    published.sort(
+        key=lambda x: (x["date"], float(x.get("order") or 0)), reverse=True
+    )
+    if verbose:
+        for p in problems:
+            print(f"  ! {p}", file=sys.stderr)
+        if drafts:
+            print(f"  · 초안 {len(drafts)}편은 사이트에서 제외: " + ", ".join(d["file"] for d in drafts))
+    return published, drafts, problems
+
 
 SITE_NAV = [
     ("index.html", "홈"),
@@ -605,8 +640,15 @@ def cat_badge(cat):
     return f'<span class="badge {c["class"]}">{c["vendor"]} · {c["label"]}</span>'
 
 
+def article_body(a):
+    """원고 파일에서 프런트매터를 떼고 본문(Markdown)만 돌려준다."""
+    with open(os.path.join(CONTENT, a["file"]), encoding="utf-8") as fh:
+        _meta, body = frontmatter.split(fh.read())
+    return body
+
+
 def reading_time(a):
-    md = open(os.path.join(CONTENT, a["file"]), encoding="utf-8").read()
+    md = article_body(a)
     body, *_ = md_to_html(md, a.get("collapse_notes"))
     text = re.sub(r"<[^>]+>", "", body)
     minutes = max(1, math.ceil(len(text) / 480))
@@ -641,14 +683,14 @@ def post_card(a, depth):
 # 페이지: 홈
 # --------------------------------------------------------------------------
 def build_home():
-    feats = [a for a in ARTICLES if a.get("featured")] or [ARTICLES[0]]
+    feats = [a for a in PUBLISHED if a.get("featured")] or [PUBLISHED[0]]
     f = feats[0]
     mins = reading_time(f)
-    rest = [a for a in ARTICLES if a is not f]
+    rest = [a for a in PUBLISHED if a is not f]
 
-    counts = {"all": len(ARTICLES)}
+    counts = {"all": len(PUBLISHED)}
     for k in CATS:
-        counts[k] = sum(1 for a in ARTICLES if a["cat"] == k)
+        counts[k] = sum(1 for a in PUBLISHED if a["cat"] == k)
 
     chips = [f'<button class="chip" type="button" data-filter="all" aria-pressed="true">전체 <span class="count">{counts["all"]}</span></button>']
     for k, c in CATS.items():
@@ -656,7 +698,7 @@ def build_home():
             f'<button class="chip" type="button" data-filter="{k}" aria-pressed="false">{c["vendor"]} · {c["label"]} <span class="count">{counts[k]}</span></button>'
         )
 
-    cards = "\n".join(post_card(a, 0) for a in ARTICLES)
+    cards = "\n".join(post_card(a, 0) for a in PUBLISHED)
 
     body = f"""
 <section class="hero">
@@ -667,7 +709,7 @@ def build_home():
         <h1>남보다 반 발<br>먼저 사는 사람의 <em>연구소</em></h1>
         <p class="lede">쿠팡과 알리에서 진짜 쓸 만한 것만 골라, 사기 전에 알아야 할 것부터 정리합니다. 스펙 나열이 아니라 <b>돈을 쓰기 전에 걸리는 지점</b>을 씁니다.</p>
         <div class="hero-meta">
-          <span>발행 <b>{len(ARTICLES)}</b>편</span>
+          <span>발행 <b>{len(PUBLISHED)}</b>편</span>
           <span>확인일 <b>{date_dots(dt.date.today().isoformat())}</b></span>
           <span>운영 <b>{esc(SITE['author'])}</b></span>
         </div>
@@ -713,7 +755,7 @@ def build_home():
 
   <section class="section" id="latest">
     <div class="section-head">
-      <h2><span class="dot"></span>최신 리뷰 <span style="font-size:13px;font-weight:600;color:var(--ink-4);letter-spacing:0">(<span data-result-count>{len(ARTICLES)}</span>)</span></h2>
+      <h2><span class="dot"></span>최신 리뷰 <span style="font-size:13px;font-weight:600;color:var(--ink-4);letter-spacing:0">(<span data-result-count>{len(PUBLISHED)}</span>)</span></h2>
       <p>카테고리를 고르거나 검색해 보세요</p>
     </div>
     <div class="toolbar">
@@ -776,7 +818,7 @@ def build_home():
                     "url": absu(f"articles/{a['slug']}.html"),
                     "name": a["title"],
                 }
-                for n, a in enumerate(ARTICLES)
+                for n, a in enumerate(PUBLISHED)
             ],
         },
     ]
@@ -798,15 +840,15 @@ def build_home():
 # 페이지: 전체 기사
 # --------------------------------------------------------------------------
 def build_articles_index():
-    counts = {"all": len(ARTICLES)}
+    counts = {"all": len(PUBLISHED)}
     for k in CATS:
-        counts[k] = sum(1 for a in ARTICLES if a["cat"] == k)
+        counts[k] = sum(1 for a in PUBLISHED if a["cat"] == k)
     chips = [f'<button class="chip" type="button" data-filter="all" aria-pressed="true">전체 <span class="count">{counts["all"]}</span></button>']
     for k, c in CATS.items():
         chips.append(
             f'<button class="chip" type="button" data-filter="{k}" aria-pressed="false">{c["vendor"]} · {c["label"]} <span class="count">{counts[k]}</span></button>'
         )
-    cards = "\n".join(post_card(a, 0) for a in ARTICLES)
+    cards = "\n".join(post_card(a, 0) for a in PUBLISHED)
     body = f"""
 <div class="wrap">
   <div class="page-head" style="border-bottom:0;padding-bottom:8px">
@@ -845,7 +887,7 @@ def build_articles_index():
 # 페이지: 기사
 # --------------------------------------------------------------------------
 def build_article(a):
-    md = open(os.path.join(CONTENT, a["file"]), encoding="utf-8").read()
+    md = article_body(a)
     body_html, toc, md_tags, h1 = md_to_html(md, a.get("collapse_notes"))
     body_html = re.sub(r'^(\s*<hr>\s*)+', '', body_html).strip()
     body_html = re.sub(r'(<p class="dateline">.*?</p>)\s*(<hr>\s*)+', r'\1', body_html, flags=re.S)
@@ -871,7 +913,7 @@ def build_article(a):
 </details>"""
 
     takeaways = "\n".join(f"<li>{t}</li>" for t in a["takeaways"])
-    others = [x for x in ARTICLES if x["slug"] != a["slug"]]
+    others = [x for x in PUBLISHED if x["slug"] != a["slug"]]
     related = ""
     if others:
         o = others[0]
@@ -1063,7 +1105,7 @@ def build_404():
 def build_feeds():
     today = dt.date.today().isoformat()
     urls = [(absu("index.html"), today, "1.0"), (absu("articles.html"), today, "0.8"), (absu("about.html"), today, "0.5")]
-    for a in ARTICLES:
+    for a in PUBLISHED:
         urls.append((absu(f"articles/{a['slug']}.html"), a.get("updated", a["date"]), "0.9"))
 
     entries = "\n".join(
@@ -1084,13 +1126,14 @@ def build_feeds():
 
     robots = f"""User-agent: *
 Allow: /
+Disallow: /admin
 
 Sitemap: {SITE['url']}/sitemap.xml
 """
     open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8").write(robots)
 
     items = []
-    for a in sorted(ARTICLES, key=lambda x: x["date"], reverse=True):
+    for a in sorted(PUBLISHED, key=lambda x: x["date"], reverse=True):
         pub = dt.datetime.fromisoformat(a["date"] + "T09:00:00+09:00").strftime("%a, %d %b %Y %H:%M:%S +0900")
         link = absu(f"articles/{a['slug']}.html")
         items.append(
@@ -1130,12 +1173,85 @@ FAVICON = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
 
 
 # --------------------------------------------------------------------------
+# 관리자 모드 (/admin) · 배포 보조 파일
+# --------------------------------------------------------------------------
+ADMIN_TPL = os.path.join(THEME, "admin.html")
+
+# Cloudflare Pages 가 읽는 헤더 파일 — /admin 은 어떤 경우에도 검색에 남기지 않는다.
+HEADERS = """/admin/*
+  X-Robots-Tag: noindex, nofollow
+
+/api/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+"""
+
+
+def build_admin():
+    """theme/admin.html → docs/admin/index.html (한 파일로 끝나는 관리자 화면)."""
+    if not os.path.exists(ADMIN_TPL):
+        return None
+    with open(ADMIN_TPL, encoding="utf-8") as fh:
+        tpl = fh.read()
+    tpl = tpl.replace("{{BUILD_DATE}}", dt.date.today().isoformat())
+    tpl = tpl.replace("{{IMG_MAP}}", json.dumps(IMG_MAP, ensure_ascii=False))
+    dest_dir = os.path.join(OUT, "admin")
+    os.makedirs(dest_dir, exist_ok=True)
+    with open(os.path.join(dest_dir, "index.html"), "w", encoding="utf-8") as fh:
+        fh.write(tpl)
+    return "admin/index.html"
+
+
+def copy_theme_images():
+    """theme/assets/images/ 에 커밋된 새 이미지를 docs/assets/images/ 로 옮긴다.
+
+    관리자 화면에서 올린 대표 이미지는 theme/assets/images/ 에 커밋되므로,
+    빌드가 docs/assets/images/ 로 복사해야 사이트에서 보인다.
+    (기존 docs/assets/images/ 파일은 건드리지 않는다.)
+    """
+    src = os.path.join(THEME, "assets", "images")
+    dst = os.path.join(OUT, "assets", "images")
+    os.makedirs(dst, exist_ok=True)
+    copied = 0
+    if os.path.isdir(src):
+        for dp, _dn, fns in os.walk(src):
+            rel_dir = os.path.relpath(dp, src)
+            for fn in fns:
+                if fn == ".DS_Store":
+                    continue
+                target_dir = dst if rel_dir == "." else os.path.join(dst, rel_dir)
+                os.makedirs(target_dir, exist_ok=True)
+                shutil.copy2(os.path.join(dp, fn), os.path.join(target_dir, fn))
+                copied += 1
+    return copied
+
+
+def clean_stale_articles():
+    """content/ 에서 사라진 글의 HTML 이 docs/articles/ 에 남지 않게 한다."""
+    d = os.path.join(OUT, "articles")
+    os.makedirs(d, exist_ok=True)
+    keep = {a["slug"] + ".html" for a in PUBLISHED}
+    removed = []
+    for fn in os.listdir(d):
+        if fn.endswith(".html") and fn not in keep:
+            os.remove(os.path.join(d, fn))
+            removed.append(fn)
+    return removed
+
+
+# --------------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--domain", help="예: https://pickearly.com")
     args = ap.parse_args()
     if args.domain:
         SITE["url"] = args.domain.rstrip("/")
+
+    global PUBLISHED
+    PUBLISHED, _drafts, _problems = load_content()
+    if not PUBLISHED:
+        print("원고가 없습니다. content/*.md 를 확인하세요.", file=sys.stderr)
+        sys.exit(1)
 
     os.makedirs(OUT, exist_ok=True)
 
@@ -1145,6 +1261,7 @@ def main():
     shutil.copy(os.path.join(THEME, "app.js"), os.path.join(OUT, "assets", "app.js"))
     open(os.path.join(OUT, "assets", "favicon.svg"), "w", encoding="utf-8").write(FAVICON)
     open(os.path.join(OUT, ".nojekyll"), "w").write("")
+    copied = copy_theme_images()
 
     pages = {
         "index.html": build_home(),
@@ -1155,16 +1272,26 @@ def main():
     for name, content in pages.items():
         open(os.path.join(OUT, name), "w", encoding="utf-8").write(content)
 
-    for a in ARTICLES:
+    for a in PUBLISHED:
         open(os.path.join(OUT, "articles", a["slug"] + ".html"), "w", encoding="utf-8").write(build_article(a))
 
+    admin = build_admin()
+    open(os.path.join(OUT, "_headers"), "w", encoding="utf-8").write(HEADERS)
+    stale = clean_stale_articles()
     build_feeds()
 
     # 검증용 요약
     print("built:")
-    for name in list(pages) + [f"articles/{a['slug']}.html" for a in ARTICLES] + ["sitemap.xml", "robots.txt", "feed.xml"]:
+    extra = [f"articles/{a['slug']}.html" for a in PUBLISHED] + ["sitemap.xml", "robots.txt", "feed.xml"]
+    if admin:
+        extra.append(admin)
+    for name in list(pages) + extra:
         p = os.path.join(OUT, name)
         print(f"  {name:<46} {os.path.getsize(p):>7,} bytes")
+    if copied:
+        print(f"  theme/assets/images → docs/assets/images : {copied}개")
+    if stale:
+        print(f"  지운 옛 기사 HTML: {', '.join(stale)}")
     print(f"SITE_URL = {SITE['url']}")
 
 
