@@ -473,6 +473,8 @@ def head_tags(title, desc, canonical, og_image, depth, extra_json=None, page_typ
 {og}<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{esc(title)}">
 <meta name="twitter:description" content="{esc(desc)}">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="icon" href="{R('assets/favicon.svg')}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{R('assets/favicon.svg')}">
 <link rel="alternate" type="application/rss+xml" title="픽얼리 PickEarly" href="{R('feed.xml')}">
