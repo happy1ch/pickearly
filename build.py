@@ -16,6 +16,7 @@ import html
 import json
 import math
 import os
+from urllib.parse import quote
 import re
 import shutil
 import sys
@@ -291,6 +292,7 @@ def md_to_html(md: str, collapse_keys=None):
     h2n = 0
     title_h1 = None
     tags = []
+    first_block = True
 
     while i < len(lines):
         line = lines[i]
@@ -343,7 +345,12 @@ def md_to_html(md: str, collapse_keys=None):
 
         if s.startswith(">"):
             part, i = parse_quote(lines, i, collapse_keys)
+            # 본문 첫머리의 제휴 고지는 상단 고지 박스로 대신한다
+            if first_block and "수수료를 제공받습니다" in part:
+                first_block = False
+                continue
             out.append(part)
+            first_block = False
             continue
 
         if s.startswith("|") and i + 1 < len(lines) and re.match(r"^\|[\s:\-|]+\|?$", lines[i + 1].strip()):
@@ -395,7 +402,12 @@ def md_to_html(md: str, collapse_keys=None):
                 break
             para.append(nxt)
             i += 1
-        out.append("<p>" + inline(" ".join(para)) + "</p>")
+        joined = " ".join(para)
+        if re.fullmatch(r"\*[^*]+\*", joined.strip()):
+            out.append('<p class="dateline">' + inline(joined) + "</p>")
+        else:
+            out.append("<p>" + inline(joined) + "</p>")
+        first_block = False
 
     body = "\n".join(out)
 
@@ -801,6 +813,8 @@ def build_articles_index():
 def build_article(a):
     md = open(os.path.join(CONTENT, a["file"]), encoding="utf-8").read()
     body_html, toc, md_tags, h1 = md_to_html(md, a.get("collapse_notes"))
+    body_html = re.sub(r'^(\s*<hr>\s*)+', '', body_html).strip()
+    body_html = re.sub(r'(<p class="dateline">.*?</p>)\s*(<hr>\s*)+', r'\1', body_html, flags=re.S)
     body_html = decorate(body_html)
     mins = reading_time(a)
     tags = a["tags"]
@@ -906,7 +920,7 @@ def build_article(a):
             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M8 12.2 12.2 8M8.7 5.3l1.5-1.5a3.2 3.2 0 1 1 4.5 4.5l-1.5 1.5M11.3 14.7l-1.5 1.5a3.2 3.2 0 1 1-4.5-4.5l1.5-1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             <span data-copy-label>링크 복사</span>
           </button>
-          <a class="btn-ghost" href="mailto:?subject={esc(a['title'])}&body={canon}">메일로 보내기</a>
+          <a class="btn-ghost" href="mailto:?subject={quote(a['title'])}&body={quote(canon)}">메일로 보내기</a>
           <a class="btn-ghost" href="../articles.html">전체 기사</a>
         </div>
       </footer>
@@ -987,7 +1001,7 @@ def build_404():
   <p class="eyebrow" style="justify-content:center">404</p>
   <h1 style="font-size:clamp(30px,5vw,48px);letter-spacing:-.045em;margin:16px 0 12px">찾으시는 페이지가 없습니다</h1>
   <p style="color:var(--ink-2);margin:0 auto 30px;max-width:44ch">주소가 바뀌었거나, 아직 쓰지 않은 글일 수 있습니다. 전체 기사에서 다시 찾아보세요.</p>
-  <a class="cta" href="/pickearly/articles.html" style="display:inline-flex">전체 기사 보기 <span class="cta-arrow">→</span></a>
+  <a class="cta" href="articles.html" style="display:inline-flex">전체 기사 보기 <span class="cta-arrow">→</span></a>
 </div>
 """
     return page_shell(

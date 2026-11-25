@@ -96,6 +96,7 @@ button { font: inherit; color: inherit; }
   position: sticky;
   top: 0;
   z-index: 60;
+  background: var(--paper);
   background: color-mix(in srgb, var(--paper) 86%, transparent);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
@@ -254,6 +255,7 @@ button { font: inherit; color: inherit; }
 .lab-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
+  background: var(--paper-2);
   background: color-mix(in srgb, var(--paper-2) 55%, var(--paper));
   padding: 22px 22px 20px;
   box-shadow: var(--shadow-sm);
@@ -395,7 +397,7 @@ button { font: inherit; color: inherit; }
   border-color: var(--ink);
   color: var(--paper);
 }
-.chip[aria-pressed="true"] .count { color: color-mix(in srgb, var(--paper) 65%, transparent); }
+.chip[aria-pressed="true"] .count { color: var(--paper); opacity: 0.65; }
 
 .search {
   margin-left: auto;
@@ -742,7 +744,20 @@ button { font: inherit; color: inherit; }
 
 .prose p { margin: 0 0 20px; color: var(--ink-2); }
 .prose strong { color: var(--ink); font-weight: 750; }
-.prose em { font-style: normal; background: linear-gradient(transparent 62%, color-mix(in srgb, var(--accent) 26%, transparent) 62%); }
+.prose em {
+  font-style: normal;
+  color: var(--ink);
+  font-weight: 500;
+}
+.prose p.dateline {
+  font-size: 14px;
+  line-height: 1.72;
+  color: var(--ink-3);
+  border-left: 2px solid var(--line);
+  padding-left: 13px;
+  margin: 0 0 26px;
+}
+.prose p.dateline em { color: var(--ink-3); font-weight: 400; }
 .prose del { color: var(--ink-4); }
 .prose a {
   color: var(--accent-ink);
@@ -773,6 +788,7 @@ button { font: inherit; color: inherit; }
   padding: 18px 22px 18px 22px;
   border-left: 3px solid var(--accent);
   border-radius: 0 10px 10px 0;
+  background: var(--paper-2);
   background: color-mix(in srgb, var(--paper-2) 70%, var(--paper));
   color: var(--ink-2);
   font-size: 15.5px;
