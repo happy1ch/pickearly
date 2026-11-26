@@ -151,6 +151,20 @@ def main():
         "BOYA Notra Neo ₩94,800 · NEWYES Ailog ₩56,700",
         dark=False,
     )
+    og_card(
+        os.path.join(OUT_OG, "og-xreal-one-pro.png"),
+        "쿠팡 · AI 스마트 가전",
+        ["72만 원 AR 글래스,", "사기 전에 볼 다섯 가지"],
+        "엑스리얼 원 프로 · 720,800원(15% 할인) · 쿠팡 구매평 33건",
+        dark=True,
+    )
+    og_card(
+        os.path.join(OUT_OG, "og-edifier-evobuds.png"),
+        "알리 · AI 아이디어 기기",
+        ["5만원대 AI 통역 이어폰", "EvoBuds vs EvoBuds Pro"],
+        "₩51,900 / ₩60,700 · 21개 언어 · 8,800원 차이",
+        dark=False,
+    )
     thumb_bespoke(os.path.join(OUT_IMG, "thumb-bespoke-ai-steam.png"))
 
 
