@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""솔리티 WP-500A '자가설치 vs 방문설치' 비교 도해 (픽얼리 자체 제작)."""
+"""솔리티 WP-500A '자가설치 vs 방문설치' 비교 도해 (픽얼리 자체 제작).
+
+본문 figure 는 폭 600px 로 표시되므로, 1200px 캔버스(표시 배율 0.5)에
+글자를 크게 잡아 화면에서도 읽히도록 만들었다.
+"""
 import os
 from PIL import Image, ImageDraw, ImageFont
 
@@ -37,31 +41,44 @@ def tw(d, s, sz):
 def text(d, xy, s, sz, fill, limit=None, tag=""):
     w = tw(d, s, sz)
     if limit is not None and xy[0] + w > limit:
-        print(f"  ! WIDTH OVERFLOW {tag or s[:20]!r}: {xy[0] + w:.0f} > {limit}")
+        print(f"  ! WIDTH OVERFLOW {tag or s[:16]!r}: {xy[0] + w:.0f} > {limit}")
     d.text(xy, s, font=f(sz), fill=fill)
     return w
 
 
+def card(d, x0, x1, y0, h, c):
+    d.rounded_rectangle([x0, y0, x1, y0 + h], radius=16, fill=CARD, outline=LINE, width=2)
+    text(d, (x0 + 40, y0 + 26), c["name"], 30, SUB, x1 - 40, "card name")
+    pw = text(d, (x0 + 38, y0 + 64), c["price"], 74, c["price_fill"], x1 - 40, "price")
+    text(d, (x0 + 40 + pw + 10, y0 + 104), "원", 30, SUB, x1 - 40, "won")
+    text(d, (x0 + 40, y0 + 158), c["note"], 24, SUB, x1 - 40, "note")
+    d.line([(x0 + 40, y0 + 196), (x1 - 40, y0 + 196)], fill=LINE, width=1)
+    for i, (label, value) in enumerate(c["rows"]):
+        ry = y0 + 212 + i * 90
+        if i:
+            d.line([(x0 + 40, ry - 20), (x1 - 40, ry - 20)], fill=(234, 230, 222), width=1)
+        text(d, (x0 + 40, ry), label, 24, SUB, x1 - 40, "row label")
+        text(d, (x0 + 40, ry + 34), value, 34, INK, x1 - 40, "row value")
+
+
 def main():
-    W, H = 1600, 1000
+    W, H = 1200, 1700
     img = Image.new("RGB", (W, H), PAPER)
     d = ImageDraw.Draw(img, "RGBA")
+    L, R = 70, W - 70
 
     # 배경 결
-    for x in range(-H, W, 28):
+    for x in range(-H, W, 26):
         d.line([(x, H), (x + H, 0)], fill=(21, 23, 27, 6), width=1)
 
     # 상단 라벨 · 제목
-    d.text((96, 84), "SOLITY WP-500A · 설치 방식 선택", font=f(30), fill=ACCENT)
-    text(d, (94, 144), "38,420원은 '시간'이 아니라 '책임'의 값", 64, INK, 1504, "title")
-    text(d, (96, 236), "같은 제품, 두 가지 선택 — 그 차이는 '누가 책임지는가'입니다", 34, SUB, 1504, "subtitle")
-    d.text((W - 96, 92), "쿠팡 상품 페이지 · 2026-11-27 가격 기준", font=f(22), fill=SUB, anchor="ra")
+    d.text((L, 58), "SOLITY WP-500A · 설치 방식 선택", font=f(30), fill=ACCENT)
+    text(d, (L - 2, 102), "38,420원은 '시간'이 아니라 '책임'의 값", 56, INK, R, "title")
+    text(d, (L, 184), "같은 제품, 두 가지 선택 — 누가 설치하고, 문제가 생기면 누가 책임지는가", 26, SUB, R, "subtitle")
 
-    # ── 카드 두 장 ──────────────────────────────────────────────
-    cy0, cy1 = 300, 742
+    cw0, cw1 = L, R
     cards = [
         {
-            "x0": 96, "x1": 760,
             "name": "고객직접설치",
             "price": "154,140", "price_fill": INK,
             "note": "정가 194,000원 · 20% 쿠폰 적용가",
@@ -72,7 +89,6 @@ def main():
             ],
         },
         {
-            "x0": 840, "x1": 1504,
             "name": "방문설치",
             "price": "192,560", "price_fill": ACCENT,
             "note": "고객직접설치가 +38,420원",
@@ -83,46 +99,39 @@ def main():
             ],
         },
     ]
+    CH = 500
+    card(d, cw0, cw1, 240, CH, cards[0])
+    card(d, cw0, cw1, 760, CH, cards[1])
 
-    for c in cards:
-        x0, x1 = c["x0"], c["x1"]
-        d.rounded_rectangle([x0, cy0, x1, cy1], radius=14, fill=CARD, outline=LINE, width=2)
-        text(d, (x0 + 40, cy0 + 28), c["name"], 28, SUB, x1 - 40, "card name")
-        pw = text(d, (x0 + 38, cy0 + 62), c["price"], 64, c["price_fill"], x1 - 40, "price")
-        text(d, (x0 + 40 + pw + 8, cy0 + 92), "원", 28, SUB, x1 - 40, "won")
-        text(d, (x0 + 40, cy0 + 146), c["note"], 22, SUB, x1 - 40, "note")
-        d.line([(x0 + 40, cy0 + 186), (x1 - 40, cy0 + 186)], fill=LINE, width=1)
-        for i, (label, value) in enumerate(c["rows"]):
-            ry = cy0 + 190 + i * 78
-            text(d, (x0 + 40, ry), label, 21, SUB, x1 - 40, "row label")
-            text(d, (x0 + 40, ry + 26), value, 26, INK, x1 - 40, "row value")
-
-    # ── 하단: 어느 집에 어느 쪽인가 ─────────────────────────────
-    by0, by1 = 756, 884
+    # 하단: 어느 집에 어느 쪽인가
     decisions = [
         {
-            "x0": 96, "x1": 790,
             "head": "직접설치가 맞는 집",
-            "lines": ["드라이버로 손잡이를 바꿔 본 적이 있다", "기존 구멍 지름 6.8cm를 직접 확인했다"],
+            "lines": [
+                "드라이버로 손잡이를 바꿔 본 적이 있고, 기존 구멍 지름 6.8cm를 확인했다",
+                "당장 급하지 않고 주말 반나절을 쓸 수 있다",
+            ],
         },
         {
-            "x0": 810, "x1": 1504,
             "head": "방문설치가 맞는 집",
-            "lines": ["문이 낡았거나 문틀 규격이 확실하지 않다", "부모님 댁처럼 설정(얼굴 등록)까지 해 드려야 한다"],
+            "lines": [
+                "현관문이 낡았거나 문틀 깊이·모티스 규격이 확실하지 않다",
+                "부모님 댁처럼 설정(얼굴 등록)까지 해 드려야 한다",
+            ],
         },
     ]
-    for b in decisions:
-        x0, x1 = b["x0"], b["x1"]
-        d.rounded_rectangle([x0, by0, x1, by1], radius=14, fill=WARN_BG)
-        text(d, (x0 + 36, by0 + 24), b["head"], 26, ACCENT, x1 - 36, "decide head")
-        for i, line in enumerate(b["lines"]):
-            text(d, (x0 + 36, by0 + 66 + i * 34), "· " + line, 22, WARN, x1 - 36, "decide line")
+    for i, b in enumerate(decisions):
+        by = 1288 + i * 150
+        d.rounded_rectangle([L, by, R, by + 134], radius=16, fill=WARN_BG)
+        text(d, (L + 36, by + 20), b["head"], 28, ACCENT, R - 36, "decide head")
+        for j, line in enumerate(b["lines"]):
+            text(d, (L + 36, by + 62 + j * 34), "· " + line, 24, WARN, R - 36, "decide line")
 
     # 브랜드
-    d.line([(96, H - 58), (150, H - 58)], fill=ACCENT, width=4)
-    d.text((164, H - 74), "PickEarly", font=f(30), fill=INK)
-    d.text((316, H - 70), "얼리어답터 연구소", font=f(24), fill=SUB)
-    d.text((W - 96, H - 78), "설치 전 규격 확인 — 솔리티 고객센터 1588-3641", font=f(22), fill=SUB, anchor="ra")
+    d.line([(L, H - 62), (L + 54, H - 62)], fill=ACCENT, width=4)
+    d.text((L + 68, H - 80), "PickEarly", font=f(30), fill=INK)
+    d.text((L + 220, H - 76), "얼리어답터 연구소", font=f(24), fill=SUB)
+    d.text((R, H - 82), "쿠팡 상품 페이지 가격·구매평 기준 (2026-11-27)", font=f(22), fill=SUB, anchor="ra")
 
     for out in OUTS:
         os.makedirs(os.path.dirname(out), exist_ok=True)
