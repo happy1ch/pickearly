@@ -63,10 +63,10 @@ def main():
         ("모티스 길이", "110", "mm", "문 옆면에 보이는 잠금장치 길이"),
         ("스트라이커 길이", "105", "mm", "문틀 쪽 걸쇠 길이"),
     ]
-    x0, y = 620, 372
-    cw, ch = 880, 148
+    x0, y = 620, 362
+    cw, ch = 880, 146
     for i, (label, num, unit, note) in enumerate(cards):
-        yy = y + i * (ch + 22)
+        yy = y + i * (ch + 20)
         d.rounded_rectangle([x0, yy, x0 + cw, yy + ch], radius=14, fill=CARD, outline=LINE, width=2)
         d.text((x0 + 40, yy + 34), label, font=f(34), fill=INK)
         d.text((x0 + 40, yy + 84), note, font=f(24), fill=SUB)
