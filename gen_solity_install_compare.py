@@ -54,11 +54,9 @@ def card(d, x0, x1, y0, h, c):
     text(d, (x0 + 40, y0 + 158), c["note"], 24, SUB, x1 - 40, "note")
     d.line([(x0 + 40, y0 + 196), (x1 - 40, y0 + 196)], fill=LINE, width=1)
     for i, (label, value) in enumerate(c["rows"]):
-        ry = y0 + 212 + i * 90
-        if i:
-            d.line([(x0 + 40, ry - 20), (x1 - 40, ry - 20)], fill=(234, 230, 222), width=1)
+        ry = y0 + 212 + i * 96
         text(d, (x0 + 40, ry), label, 24, SUB, x1 - 40, "row label")
-        text(d, (x0 + 40, ry + 34), value, 34, INK, x1 - 40, "row value")
+        text(d, (x0 + 40, ry + 36), value, 34, INK, x1 - 40, "row value")
 
 
 def main():
@@ -99,9 +97,9 @@ def main():
             ],
         },
     ]
-    CH = 500
+    CH = 512
     card(d, cw0, cw1, 240, CH, cards[0])
-    card(d, cw0, cw1, 760, CH, cards[1])
+    card(d, cw0, cw1, 772, CH, cards[1])
 
     # 하단: 어느 집에 어느 쪽인가
     decisions = [
@@ -121,7 +119,7 @@ def main():
         },
     ]
     for i, b in enumerate(decisions):
-        by = 1288 + i * 150
+        by = 1310 + i * 150
         d.rounded_rectangle([L, by, R, by + 134], radius=16, fill=WARN_BG)
         text(d, (L + 36, by + 20), b["head"], 28, ACCENT, R - 36, "decide head")
         for j, line in enumerate(b["lines"]):
