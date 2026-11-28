@@ -866,6 +866,10 @@ button { font: inherit; color: inherit; }
   line-height: 1.6;
   min-width: 440px;
 }
+/* 열이 다섯 개 이상인 비교표는 칸이 짜부라들지 않게 넓게 잡고 좌우로 넘긴다 */
+.prose table:has(thead th:nth-child(5)) {
+  min-width: 640px;
+}
 .prose thead th {
   background: color-mix(in srgb, var(--paper-2) 80%, var(--paper));
   text-align: left;
