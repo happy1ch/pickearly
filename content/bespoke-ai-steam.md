@@ -24,7 +24,7 @@ takeaways:
   - "쿠팡 표시가 기준으로는 <b>플러스(VR80F01SDG, 1,590,000원)</b> 가 일반형·울트라와 각각 10만 원 차이로 가장 균형적입니다."
 collapse_notes:
   - "링크 검증 메모"
-featured: true
+featured: false
 order: 1
 draft: false
 ---
